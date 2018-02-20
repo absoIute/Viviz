@@ -1,4 +1,4 @@
-#include "ProcSym.h"
+#include "Viviz.h"
 
 Viviz::Viviz() {}
 
