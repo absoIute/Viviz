@@ -41,16 +41,10 @@ void Viviz::Refresh()
 					if (GetModuleInformation(hProcess, hMods[i], &mi, sizeof(mi)))
 					{
 						char path[MAX_PATH];
-						if (GetModuleBaseName(hProcess, hMods[i], path, MAX_PATH))
-						{
-							this->module_name = path;
-							
-						}
-						else
-						{
-							this->module_name = std::string();
-						}
-						SymEnumSymbols(hProcess, reinterpret_cast<ULONG64>(mi.lpBaseOfDll), "*", SymEnumSymbolsProc, this);
+
+						this->module_name = GetModuleBaseName(hProcess, hMods[i], path, MAX_PATH) ? path : std::string();
+
+						SymEnumSymbols(hProcess, reinterpret_cast<ULONG64>(mi.lpBaseOfDll), "*!*", SymEnumSymbolsProc, this);
 					}
 				}
 			}
@@ -86,12 +80,12 @@ std::vector<WinSymbol> Viviz::FromAddress(ULONG64 Address) const
 	return results;
 }
 
-std::vector<WinSymbol> Viviz::FromName(const std::string &Name) const
+std::vector<WinSymbol> Viviz::FromName(const std::string &Name, Sensitivity s) const
 {
 	std::vector<WinSymbol> results;
 	for (auto i = this->symbols.begin(); i != this->symbols.end(); ++i)
 	{
-		if (i->name == Name)
+		if ((s == Sensitivity::CaseInsensitive && !_stricmp(i->name.c_str(), Name.c_str())) || (s == Sensitivity::CaseSensitive && !strcmp(i->name.c_str(), Name.c_str())))
 		{
 			results.push_back(*i);
 		}
@@ -112,12 +106,12 @@ std::vector<WinSymbol> Viviz::FromModule(ULONG64 ModuleBase) const
 	return results;
 }
 
-std::vector<WinSymbol> Viviz::FromModule(const std::string &ModuleName) const
+std::vector<WinSymbol> Viviz::FromModule(const std::string &ModuleName, Sensitivity s) const
 {
 	std::vector<WinSymbol> results;
 	for (auto i = this->symbols.begin(); i != this->symbols.end(); ++i)
 	{
-		if (i->module_name == ModuleName)
+		if ((s == Sensitivity::CaseInsensitive && !_stricmp(i->module_name.c_str(), ModuleName.c_str())) || (s == Sensitivity::CaseSensitive && !strcmp(i->module_name.c_str(), ModuleName.c_str())))
 		{
 			results.push_back(*i);
 		}
@@ -127,6 +121,7 @@ std::vector<WinSymbol> Viviz::FromModule(const std::string &ModuleName) const
 
 std::vector<WinSymbol> Viviz::RegExMatch(const std::regex &re) const
 {
+	
 	std::vector<WinSymbol> results;
 	std::smatch m;
 	for (auto i = this->symbols.begin(); i != this->symbols.end(); ++i)
@@ -141,6 +136,6 @@ std::vector<WinSymbol> Viviz::RegExMatch(const std::regex &re) const
 
 
 
-WinSymbol::WinSymbol(PSYMBOL_INFO pi, std::string mn) : name(pi->Name), address(pi->Address), module_address(pi->ModBase), module_name(mn) {}
+WinSymbol::WinSymbol(PSYMBOL_INFO si, std::string mn) : name(si->Name), address(si->Address), module_address(si->ModBase), flags(si->Flags), module_name(mn) {}
 
 WinSymbol::~WinSymbol() {}

@@ -22,6 +22,8 @@ public:
 	Viviz(DWORD ProcessId);
 	~Viviz();
 
+	enum Sensitivity { CaseSensitive, CaseInsensitive };
+
 	//call this when more symbols are loaded by the target (note- it is automatically called when setting a processid or initializing w/ one)
 	void Refresh();
 
@@ -34,11 +36,11 @@ public:
 	std::vector<WinSymbol> FromAddress(ULONG64 Address) const;
 
 	//gets symbols with a matching name
-	std::vector<WinSymbol> FromName(const std::string &Name) const;
+	std::vector<WinSymbol> FromName(const std::string &Name, Sensitivity s = Sensitivity::CaseSensitive) const;
 
 	//gets all symbols from a specified module
 	std::vector<WinSymbol> FromModule(ULONG64 ModuleBase) const;
-	std::vector<WinSymbol> FromModule(const std::string &ModuleName) const;
+	std::vector<WinSymbol> FromModule(const std::string &ModuleName, Sensitivity s = Sensitivity::CaseSensitive) const;
 
 	//gets all symbols that match a regular expression (slow)
 	std::vector<WinSymbol> RegExMatch(const std::regex &re) const;
@@ -60,7 +62,8 @@ private:
 
 public:
 	~WinSymbol();
-
+	
 	std::string name, module_name;
 	ULONG64 address, module_address;
+	ULONG flags;
 };
